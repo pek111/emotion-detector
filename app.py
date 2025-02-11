@@ -1,6 +1,7 @@
 import asyncio
 
 import gradio as gr
+import datetime as dt
 import torch.nn.functional as F
 from googletrans import Translator
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
@@ -17,6 +18,8 @@ async def translate_text(txt):
 
 
 def predict_emotion(sentence: str, translate: bool) -> str:
+    date = (dt.datetime.utcnow() + dt.timedelta(hours=7)).strftime("%d/%m/%Y, %H:%M:%S")
+    print("New prediction request:", date)
     if translate:
         sentence = asyncio.run(translate_text(sentence))
     inputs = tokenizer(sentence, return_tensors="pt")
@@ -28,9 +31,7 @@ def predict_emotion(sentence: str, translate: bool) -> str:
     predicted_emotion = labels[pred_index]
     predicted_prob = probs[0, pred_index].item()
 
-    html_output = (
-        f"<h1 style='text-align:center; font-size:48px;'>{predicted_emotion} ({predicted_prob:.2f}%)</h1>"
-    )
+    html_output = f"<h1 style='text-align:center; font-size:48px;'>{predicted_emotion} ({predicted_prob:.2f}%)</h1>"
 
     other_emotions = []
     for idx, prob in enumerate(probs[0]):
@@ -54,4 +55,4 @@ with gr.Blocks() as iface:
     predict_button = gr.Button("เริ่มต้น")
     predict_button.click(fn=predict_emotion, inputs=[sentence, translate], outputs=output)
 
-iface.launch()
+iface.launch(server_name="172.31.30.15", server_port=80)
